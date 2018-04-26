@@ -426,6 +426,13 @@ class OplogThread(threading.Thread):
         """Remove fields from an oplog entry that should not be replicated.
 
         NOTE: this does not support array indexing, for example 'a.b.2'"""
+        #
+        # Version 3.6 of mongodb includes a $v,
+        # see https://jira.mongodb.org/browse/SERVER-32240
+        entry_o = entry['o']
+        if '$v' in entry_o:
+            entry_o.pop('$v')
+        #
         if not include_fields and not exclude_fields:
             return entry
         elif include_fields:
@@ -434,11 +441,6 @@ class OplogThread(threading.Thread):
             filter_fields = self._pop_excluded_fields
 
         fields = include_fields or exclude_fields
-        entry_o = entry['o']
-        # Version 3.6 of mongodb includes a $v,
-        # see https://jira.mongodb.org/browse/SERVER-32240
-        if '$v' in entry_o:
-            entry_o.pop('$v')
 
         # 'i' indicates an insert. 'o' field is the doc to be inserted.
         if entry['op'] == 'i':
